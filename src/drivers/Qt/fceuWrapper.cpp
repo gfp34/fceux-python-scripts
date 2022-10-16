@@ -58,6 +58,8 @@
 #include "../../fceulua.h"
 #endif
 
+#include "../../fceupython.h"
+
 #include "common/os_utils.h"
 #include "common/configSys.h"
 #include "../../oldmovie.h"
@@ -1056,6 +1058,22 @@ int  fceuWrapperInit( int argc, char *argv[] )
 		FCEU_LoadLuaCode(s.c_str());
 	}
 #endif
+
+	// load python script if option passed
+	g_config->getOption("SDL.PythonScript", &s);
+	g_config->setOption("SDL.PythonScript", "");
+	if (s.size() > 0)
+	{
+		QFileInfo fi( s.c_str() );
+
+		// Resolve absolute path to file
+		if ( fi.exists() )
+		{
+			s = fi.canonicalFilePath().toStdString();
+		}
+
+		FCEU_LoadPythonCode(s.c_str());
+	}
 	
 	g_config->getOption("SDL.NewPPU", &newppu);
 	g_config->getOption("SDL.Frameskip", &frameskip);
