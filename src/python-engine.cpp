@@ -7,7 +7,8 @@
 #include <pybind11/embed.h> 
 namespace py = pybind11;
 
-
+#include "alloca.h"
+#include "debug.h"
 #include "movie.h"
 #include "state.h"
 #include "types.h"
@@ -132,6 +133,27 @@ static void joypad_set(int player, py::dict input)
 	}
 }
 
+static int memory_readbyte(int address)
+{
+	return GetMem(address);
+}
+
+static int memory_readbytesigned(int address)
+{
+	return (int8) GetMem(address);
+}
+
+static py::bytearray memory_readbyterange(int address, int length)
+{
+	char* buf = (char*)alloca(length);
+	for(int i=0; i<length; i++) {
+		buf[i] = GetMem(address + i);
+	}
+
+	return py::bytearray(buf, length); 
+}
+
+
 PYBIND11_EMBEDDED_MODULE(emu, m) 
 {
 	m.def("frameadvance", emu_frameadvance);
@@ -149,6 +171,15 @@ PYBIND11_EMBEDDED_MODULE(joypad, m)
 	m.def("set", joypad_set);
 	m.def("write", joypad_set);
 }
+
+PYBIND11_EMBEDDED_MODULE(memory, m)
+{
+	m.def("readbyte", memory_readbyte);
+	m.def("readbyteunsigned", memory_readbyte);
+	m.def("readbytesigned", memory_readbytesigned);
+	m.def("readbyterange", memory_readbyterange);
+}
+
 
 void FCEU_PythonFrameBoundary() 
 {
