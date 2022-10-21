@@ -10,6 +10,7 @@ namespace py = pybind11;
 #include "types.h"
 #include "alloca.h"
 #include "debug.h"
+#include "fceu.h"
 #include "movie.h"
 #include "state.h"
 #include "fceupython.h"
@@ -174,6 +175,12 @@ static int memory_readwordsigned(py::int_ addressLowPy, py::int_ addressHighPy =
 	return GetWord(addressLowPy, addressHighPy, true);
 }
 
+static void memory_writebyte(uint32 address, uint8 value)
+{
+	if(address < 0x10000)
+		BWrite[address](address, value);
+}
+
 PYBIND11_EMBEDDED_MODULE(emu, m) 
 {
 	m.def("frameadvance", emu_frameadvance);
@@ -201,6 +208,7 @@ PYBIND11_EMBEDDED_MODULE(memory, m)
 	m.def("readword", memory_readword);
 	m.def("readwordunsigned", memory_readword);
 	m.def("readwordsigned", memory_readwordsigned);
+	m.def("writebyte", memory_writebyte);
 }
 
 
