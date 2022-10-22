@@ -7,10 +7,12 @@
 #include <pybind11/embed.h> 
 namespace py = pybind11;
 
-
+#include "types.h"
+#include "alloca.h"
+#include "debug.h"
+#include "fceu.h"
 #include "movie.h"
 #include "state.h"
-#include "types.h"
 #include "fceupython.h"
 
 // Are we running any code right now?
@@ -132,6 +134,53 @@ static void joypad_set(int player, py::dict input)
 	}
 }
 
+static int memory_readbyte(int address)
+{
+	return GetMem(address);
+}
+
+static int memory_readbytesigned(int address)
+{
+	return (int8) GetMem(address);
+}
+
+static py::bytearray memory_readbyterange(int address, int length)
+{
+	char* buf = (char*)alloca(length);
+	for(int i=0; i<length; i++) {
+		buf[i] = GetMem(address + i);
+	}
+
+	return py::bytearray(buf, length); 
+}
+
+static int GetWord(py::int_ addressLowPy, py::int_ addressHighPy, bool isSigned)
+{
+	uint16 addressLow = addressLowPy.cast<uint16>();\
+	uint16 addressHigh = addressLow + 1;
+	if (!addressHighPy.is_none())
+		addressHigh = addressHighPy.cast<uint16>();
+
+	uint16 result = GetMem(addressLow) | (GetMem(addressHigh) << 8);
+	return isSigned ? (int16)result : result;
+}
+
+static int memory_readword(py::int_ addressLowPy, py::int_ addressHighPy = py::none())
+{
+	return GetWord(addressLowPy, addressHighPy, false);
+}
+
+static int memory_readwordsigned(py::int_ addressLowPy, py::int_ addressHighPy = py::none())
+{
+	return GetWord(addressLowPy, addressHighPy, true);
+}
+
+static void memory_writebyte(uint32 address, uint8 value)
+{
+	if(address < 0x10000)
+		BWrite[address](address, value);
+}
+
 PYBIND11_EMBEDDED_MODULE(emu, m) 
 {
 	m.def("frameadvance", emu_frameadvance);
@@ -149,6 +198,19 @@ PYBIND11_EMBEDDED_MODULE(joypad, m)
 	m.def("set", joypad_set);
 	m.def("write", joypad_set);
 }
+
+PYBIND11_EMBEDDED_MODULE(memory, m)
+{
+	m.def("readbyte", memory_readbyte);
+	m.def("readbyteunsigned", memory_readbyte);
+	m.def("readbytesigned", memory_readbytesigned);
+	m.def("readbyterange", memory_readbyterange);
+	m.def("readword", memory_readword);
+	m.def("readwordunsigned", memory_readword);
+	m.def("readwordsigned", memory_readwordsigned);
+	m.def("writebyte", memory_writebyte);
+}
+
 
 void FCEU_PythonFrameBoundary() 
 {
