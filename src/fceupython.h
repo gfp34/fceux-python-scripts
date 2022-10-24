@@ -2,8 +2,10 @@
 #define _FCEUPYTHON_H
 
 void FCEU_PythonFrameBoundary();
-void FCEU_LoadPythonCode(const char* filename);
+int FCEU_LoadPythonCode(const char* filename);
 
 uint8 FCEU_PythonReadJoypad(int,uint8);
+
+void FCEU_PythonStop();
 
 #endif //_FCEUPYTHON_H

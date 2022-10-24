@@ -202,6 +202,7 @@ class  consoleWin_t : public QMainWindow
 		QAction *quickLoadAct;
 		QAction *quickSaveAct;
 		QAction *loadLuaAct;
+		QAction *loadPythonAct;
 		QAction *scrShotAct;
 		QAction *quitAct;
 		QAction *inputConfig;
@@ -366,6 +367,7 @@ class  consoleWin_t : public QMainWindow
 		void incrementState(void);
 		void decrementState(void);
 		void loadLua(void);
+		void loadPython(void);
 		void takeScreenShot(void);
 		void prepareScreenShot(void);
 		void powerConsoleCB(void);

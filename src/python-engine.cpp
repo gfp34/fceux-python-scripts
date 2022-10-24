@@ -3,6 +3,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <iostream>
+#include <fstream>
 
 #include <pybind11/embed.h> 
 namespace py = pybind11;
@@ -246,7 +247,7 @@ void pythonStart(std::string filename)
  *
  * Returns true on success, false on failure.
  */
-void FCEU_LoadPythonCode(const char* filename) 
+int FCEU_LoadPythonCode(const char* filename) 
 {
 	if (filename != pythonScriptName)
 	{
@@ -254,6 +255,13 @@ void FCEU_LoadPythonCode(const char* filename)
 			free(pythonScriptName);
 		pythonScriptName = strdup(filename); 
 	}
+
+	// Return 0 if the file doesn't exist
+	std::ifstream ifile;
+	ifile.open(filename);
+	if (!ifile)
+		return 0;
+	ifile.close();
 
 	// Start interpreter
 	pythonRunning = true;
@@ -266,6 +274,8 @@ void FCEU_LoadPythonCode(const char* filename)
 	std::thread(pythonStart, std::string(filename)).detach();
 
 	FCEU_PythonFrameBoundary();
+
+	return 1;
 }
 
 /**

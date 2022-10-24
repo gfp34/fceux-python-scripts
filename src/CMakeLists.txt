@@ -538,7 +538,8 @@ set(SRC_DRIVERS_SDL
   ${CMAKE_CURRENT_SOURCE_DIR}/drivers/Qt/MoviePlay.cpp  
   ${CMAKE_CURRENT_SOURCE_DIR}/drivers/Qt/MovieRecord.cpp  
   ${CMAKE_CURRENT_SOURCE_DIR}/drivers/Qt/MovieOptions.cpp  
-  ${CMAKE_CURRENT_SOURCE_DIR}/drivers/Qt/LuaControl.cpp  
+  ${CMAKE_CURRENT_SOURCE_DIR}/drivers/Qt/LuaControl.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/drivers/Qt/PythonControl.cpp  
   ${CMAKE_CURRENT_SOURCE_DIR}/drivers/Qt/CheatsConf.cpp  
   ${CMAKE_CURRENT_SOURCE_DIR}/drivers/Qt/GameGenie.cpp  
   ${CMAKE_CURRENT_SOURCE_DIR}/drivers/Qt/HexEditor.cpp  

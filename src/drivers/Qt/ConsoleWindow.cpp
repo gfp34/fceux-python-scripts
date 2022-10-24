@@ -80,6 +80,7 @@
 #include "Qt/TimingConf.h"
 #include "Qt/FrameTimingStats.h"
 #include "Qt/LuaControl.h"
+#include "Qt/PythonControl.h"
 #include "Qt/CheatsConf.h"
 #include "Qt/GameGenie.h"
 #include "Qt/HexEditor.h"
@@ -1075,6 +1076,13 @@ void consoleWin_t::createMainMenu(void)
 #else
 	loadLuaAct = NULL;
 #endif
+
+	// File -> Load Python Script
+	loadPythonAct = new QAction(tr("Load &Python Script"), this);
+	loadPythonAct->setStatusTip(tr("Load Python Script"));
+	connect(loadPythonAct, SIGNAL(triggered()), this, SLOT(loadPython(void)));
+	fileMenu->addAction(loadPythonAct);
+	fileMenu->addSeparator();
 
 	// File -> Screenshot
 	scrShotAct = new QAction(tr("Screens&hot"), this);
@@ -2848,6 +2856,17 @@ void consoleWin_t::loadLua(void)
 	
    luaCtrlWin->show();
 #endif
+}
+
+void consoleWin_t::loadPython(void)
+{
+	PythonControlDialog_t* pythonCtrlWin;
+
+	// printf("Open Python Control Window\n");
+
+	pythonCtrlWin = new PythonControlDialog_t(this);
+
+	pythonCtrlWin->show();
 }
 
 void consoleWin_t::openInputConfWin(void)
