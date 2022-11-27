@@ -5,7 +5,7 @@ print("PY: Start savestate_test.py")
 
 while(True):
     if emu.framecount() == 15 * 60:
-        ss = savestate.object(1)
+        ss = savestate.object()
         print("PY: SAVE", ss)
         savestate.save(ss)
     

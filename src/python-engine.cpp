@@ -214,7 +214,7 @@ static void memory_writebyte(uint32 address, uint8 value)
 		BWrite[address](address, value);
 }
 
-static PythonSaveState savestate_object(py::int_ slot)
+static PythonSaveState savestate_object(py::object slot)
 {
 	int which = -1;
 	if (!slot.is_none()) {
@@ -292,7 +292,7 @@ PYBIND11_EMBEDDED_MODULE(savestate, m)
 {
 	py::class_<PythonSaveState>(m, "PythonSaveState");
 
-	m.def("object", savestate_object);
+	m.def("object", savestate_object, py::arg("slot") = py::none());
 	m.def("save", savestate_save);
 	m.def("load", savestate_load);
 }
