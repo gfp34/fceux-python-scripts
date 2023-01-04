@@ -214,7 +214,7 @@ static void memory_writebyte(uint32 address, uint8 value)
 		BWrite[address](address, value);
 }
 
-static PythonSaveState savestate_object(py::object slot)
+static PythonSaveState* savestate_object(py::object slot)
 {
 	int which = -1;
 	if (!slot.is_none()) {
@@ -235,33 +235,33 @@ static PythonSaveState savestate_object(py::object slot)
 		ss->anonymous = true;
 	}
 
-	return *ss; 
+	return ss; 
 }
 
-static void savestate_save(PythonSaveState& pythonSaveState)
+static void savestate_save(py::object slot, bool persist) 
 {
-	PythonSaveState* ss = &pythonSaveState;
+	// Create the savestate object
+	PythonSaveState* ss = savestate_object(slot);
 
+	// Save the savestate
 	if(ss->data) 
 		delete ss->data;
 	ss->data = new EMUFILE_MEMORY();
-
 	FCEUSS_SaveMS(ss->data, Z_NO_COMPRESSION);
 	ss->data->fseek(0, SEEK_SET);
+
+	// Set savestate to be persisted (not stored in /tmp)
+	if (persist)
+		ss->persist(); 
 }
 
-static void savestate_load(PythonSaveState& pythonSaveState)
+static void savestate_load(py::object slot)
 {
-	PythonSaveState* ss = &pythonSaveState;
+	// Create the savestate object
+	PythonSaveState* ss = savestate_object(slot); 
 
 	if (FCEUSS_LoadFP(ss->data, SSLOADPARAM_NOBACKUP))
 		ss->data->fseek(0, SEEK_SET);
-}
-
-static void savestate_persist(PythonSaveState& ss) 
-{
-	// SEGFAULT in fread of emufile.h upon loading persisted savestate
-	ss.persist();
 }
 
 PYBIND11_EMBEDDED_MODULE(emu, m) 
@@ -296,12 +296,8 @@ PYBIND11_EMBEDDED_MODULE(memory, m)
 
 PYBIND11_EMBEDDED_MODULE(savestate, m)
 {
-	py::class_<PythonSaveState>(m, "PythonSaveState");
-
-	m.def("object", savestate_object, py::arg("slot") = py::none());
-	m.def("save", savestate_save);
-	m.def("load", savestate_load);
-	m.def("persist", savestate_persist);
+	m.def("save", savestate_save, py::arg("slot")=py::none(), py::arg("persist")=false);
+	m.def("load", savestate_load, py::arg("slot")=py::none());
 }
 
 
