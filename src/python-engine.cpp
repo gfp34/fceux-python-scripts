@@ -258,6 +258,12 @@ static void savestate_load(PythonSaveState& pythonSaveState)
 		ss->data->fseek(0, SEEK_SET);
 }
 
+static void savestate_persist(PythonSaveState& ss) 
+{
+	// SEGFAULT in fread of emufile.h upon loading persisted savestate
+	ss.persist();
+}
+
 PYBIND11_EMBEDDED_MODULE(emu, m) 
 {
 	m.def("frameadvance", emu_frameadvance);
@@ -295,6 +301,7 @@ PYBIND11_EMBEDDED_MODULE(savestate, m)
 	m.def("object", savestate_object, py::arg("slot") = py::none());
 	m.def("save", savestate_save);
 	m.def("load", savestate_load);
+	m.def("persist", savestate_persist);
 }
 
 
