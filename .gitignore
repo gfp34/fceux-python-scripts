@@ -43,3 +43,6 @@ fceux-net-server
 
 # typical CMake build directory
 /build
+
+#.vscode
+.vscode

@@ -3,6 +3,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <iostream>
+#include <zlib.h>
 
 #include <pybind11/embed.h> 
 namespace py = pybind11;
@@ -11,6 +12,7 @@ namespace py = pybind11;
 #include "alloca.h"
 #include "debug.h"
 #include "fceu.h"
+#include "file.h"
 #include "movie.h"
 #include "state.h"
 #include "fceupython.h"
@@ -40,6 +42,37 @@ static uint8 pythonjoypads2[4]= { 0x00, 0x00, 0x00, 0x00 }; //0x
 /* Crazy logic stuff.
 	11 - true		01 - pass-through (default)
 	00 - false		10 - invert					*/
+
+struct PythonSaveState {
+	std::string filename;
+	EMUFILE_MEMORY *data;
+	bool anonymous, persisted;
+	PythonSaveState()
+		: data(0)
+		, anonymous(false)
+		, persisted(false)
+	{}
+	~PythonSaveState() {
+		if(data) delete data;
+	}
+	void persist() {
+		persisted = true;
+		FILE* outf = fopen(filename.c_str(),"wb");
+		fwrite(data->buf(),1,data->size(),outf);
+		fclose(outf);
+	}
+	void ensureLoad() {
+		if(data) return;
+		persisted = true;
+		FILE* inf = fopen(filename.c_str(),"rb");
+		fseek(inf,0,SEEK_END);
+		int len = ftell(inf);
+		fseek(inf,0,SEEK_SET);
+		data = new EMUFILE_MEMORY(len);
+		fread(data->buf(),1,len,inf);
+		fclose(inf);
+	}
+};
 
 
 static void emu_frameadvance() 
@@ -181,6 +214,56 @@ static void memory_writebyte(uint32 address, uint8 value)
 		BWrite[address](address, value);
 }
 
+static PythonSaveState* savestate_object(py::object slot)
+{
+	int which = -1;
+	if (!slot.is_none()) {
+		which = slot.cast<int>(); 
+	}
+
+	PythonSaveState* ss = new PythonSaveState();
+
+	if (which > 0) {
+		ss->filename = FCEU_MakeFName(FCEUMKF_STATE, (which % 10), 0);
+
+		if (CheckFileExists(ss->filename.c_str()))
+			ss->ensureLoad();
+	} else {
+		char* tmp = tempnam(NULL, "snlua");
+		ss->filename = tmp;
+		free(tmp);
+		ss->anonymous = true;
+	}
+
+	return ss; 
+}
+
+static void savestate_save(py::object slot, bool persist) 
+{
+	// Create the savestate object
+	PythonSaveState* ss = savestate_object(slot);
+
+	// Save the savestate
+	if(ss->data) 
+		delete ss->data;
+	ss->data = new EMUFILE_MEMORY();
+	FCEUSS_SaveMS(ss->data, Z_NO_COMPRESSION);
+	ss->data->fseek(0, SEEK_SET);
+
+	// Set savestate to be persisted (not stored in /tmp)
+	if (persist)
+		ss->persist(); 
+}
+
+static void savestate_load(py::object slot)
+{
+	// Create the savestate object
+	PythonSaveState* ss = savestate_object(slot); 
+
+	if (FCEUSS_LoadFP(ss->data, SSLOADPARAM_NOBACKUP))
+		ss->data->fseek(0, SEEK_SET);
+}
+
 PYBIND11_EMBEDDED_MODULE(emu, m) 
 {
 	m.def("frameadvance", emu_frameadvance);
@@ -209,6 +292,12 @@ PYBIND11_EMBEDDED_MODULE(memory, m)
 	m.def("readwordunsigned", memory_readword);
 	m.def("readwordsigned", memory_readwordsigned);
 	m.def("writebyte", memory_writebyte);
+}
+
+PYBIND11_EMBEDDED_MODULE(savestate, m)
+{
+	m.def("save", savestate_save, py::arg("slot")=py::none(), py::arg("persist")=false);
+	m.def("load", savestate_load, py::arg("slot")=py::none());
 }
 
 
